@@ -1,14 +1,44 @@
 package com.van.productcatalogapi.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
 
 @Configuration
 public class RedisConfig {
-    // TODO NÍVEL 2: configurar aqui:
-    // 1. RedisTemplate<String, Object> com serialização JSON (Jackson)
-    //    — sem isso o Redis guarda bytes ilegíveis em vez de JSON
-    // 2. RedisCacheManager com TTL padrão de 10 minutos
-    //    — o @Cacheable vai usar esse manager automaticamente
-    // 3. CacheManagerCustomizer para configurar caches individuais
-    //    — ex: cache de produtos com TTL diferente do cache de trending
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        return template;
+    }
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10))// TTL = Time To Live = tempo de vida do dado no cache após 10 minutos, o dado expira automaticamente
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .disableCachingNullValues(); // instrui o Spring a nunca salvar null
+
+        return RedisCacheManager.builder(factory)
+                .cacheDefaults(config)
+                .build();
+    }
 }

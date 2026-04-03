@@ -4,6 +4,8 @@ import com.van.productcatalogapi.entity.Product;
 import com.van.productcatalogapi.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,43 +14,49 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ProductService {
-    private final ProductRepository repository;
+    private final ProductRepository productRepository;
 
-    // PONTO 1: @Cacheable
-    // Quando alguém buscar produto por ID, o resultado vai pro Redis.
-    // Na segunda chamada, Spring intercepta e retorna do Redis direto
-    // sem nem entrar no método. O banco não é tocado.
-    // "products" é o nome do "balde" no Redis onde esse dado fica.
+    @Cacheable(value = "products", key = "#id")
     public Product findById(Long id) {
         log.info("[BANCO] Buscando produto id={} no PostgreSQL...", id);
-        return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + id));
+        log.info("[BANCO] Produto encontrado: {}. Salvando no Redis...", product.getName());
+        return product;
     }
 
+    @Cacheable(value = "products-all")
     public List<Product> findAll() {
-        return repository.findAll();
+        log.info("[BANCO] Buscando TODOS os produtos no PostgreSQL...");
+        List<Product> products = productRepository.findAll();
+        log.info("[BANCO] {} produtos encontrados. Salvando lista no Redis...", products.size());
+        return products;
     }
 
     public Product save(Product product) {
-        return repository.save(product);
+        log.info("[BANCO] Salvando novo produto: {}", product.getName());
+        Product saved = productRepository.save(product);
+        log.info("[BANCO] Produto salvo com id={}", saved.getId());
+        return saved;
     }
 
-    //  PONTO 2: @CacheEvict
-    // Quando atualizar um produto, o cache desse ID precisa ser apagado.
-    // Se não apagar, alguém vai buscar o produto atualizado e receber
-    // a versão antiga do Redis. Esse é o problema de consistência.
+    @CacheEvict(value = "products", key = "#id") //USando quando o cache desse ID precisa ser apaagdo para atualizar o banco
     public Product update(Long id, Product product) {
+        log.info("[CACHE] Invalidando cache do produto id={} no Redis...", id);
         Product existing = findById(id);
         existing.setName(product.getName());
-        existing.setPrice(product.getPrice());
         existing.setDescription(product.getDescription());
-        return repository.save(existing);
+        existing.setPrice(product.getPrice());
+        existing.setQuantity(product.getQuantity());
+        Product updated = productRepository.save(existing);
+        log.info("[BANCO] Produto id={} atualizado no PostgreSQL. Próxima leitura virá do banco.", id);
+        return updated;
     }
 
-    //  PONTO 3: @CacheEvict no delete também
-    // Mesmo motivo: apagar o produto do banco sem apagar do Redis
-    // faz a API continuar servindo um produto que não existe mais.
+    @CacheEvict(value = "products", key = "#id")
     public void delete(Long id) {
-        repository.deleteById(id);
+        log.info("[CACHE] Invalidando cache do produto id={} no Redis...", id);
+        productRepository.deleteById(id);
+        log.info("[BANCO] Produto id={} deletado do PostgreSQL.", id);
     }
 }

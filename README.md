@@ -7,46 +7,33 @@ Projeto desenvolvido para demonstrar o uso de cache distribuído na prática.
 
 ## 🚀 Tecnologias
 
-| Tecnologia | Versão | Por que foi usada |
-|---|---|---|
-| Java | 21 | LTS mais recente, suporte a records e melhorias de performance |
-| Spring Boot | 3.5.13 | Framework principal, produtividade e ecossistema maduro |
-| Spring Data JPA | 3.5.13 | Abstração do banco relacional, sem SQL manual |
-| Spring Data Redis | 3.5.13 | Integração com Redis, suporte a @Cacheable e RedisTemplate |
-| Spring Cache | 3.5.13 | Anotações declarativas de cache (@Cacheable, @CacheEvict) |
-| PostgreSQL | 16 | Banco de dados relacional, fonte de verdade dos dados |
-| Redis | 7 | Cache distribuído em memória, ranking com Sorted Set |
-| Lombok | latest | Elimina boilerplate de getters, setters e construtores |
-| Bean Validation | 3.x | Validação de entrada com @NotBlank, @NotNull, @Positive |
-| Docker Compose | latest | Orquestração local dos serviços de infraestrutura |
-| PgAdmin 4 | latest | Interface visual para administrar o PostgreSQL |
-| Redis Commander | latest | Interface visual para inspecionar dados no Redis |
+| Tecnologia | Por que foi usada |
+|---|---|
+| Java 21 | LTS mais recente, suporte a records e melhorias de performance |
+| Spring Boot | Framework principal, produtividade e ecossistema maduro |
+| Spring Data JPA | Abstração do banco relacional, sem SQL manual |
+| Spring Data Redis | Integração com Redis, suporte a @Cacheable e RedisTemplate |
+| Spring Cache | Anotações declarativas de cache (@Cacheable, @CacheEvict, @CachePut) |
+| PostgreSQL | Banco de dados relacional, fonte de verdade dos dados |
+| Redis | Cache distribuído em memória, ranking com Sorted Set |
+| Lombok | Elimina boilerplate de getters, setters e construtores |
+| Bean Validation | Validação de entrada com @NotBlank, @NotNull, @Positive |
+| Docker Compose | Orquestra localmente PostgreSQL, Redis, PgAdmin e Redis Commander |
+| PgAdmin 4 | Interface visual para administrar e inspecionar o PostgreSQL |
+| Redis Commander | Interface visual para inspecionar chaves e valores no Redis em tempo real |
+| Testcontainers | Sobe containers reais de Redis durante os testes de integração — sem mock |
+| JUnit 5 + Mockito | Testes unitários do controller com MockMvc e @MockitoBean |
+| GitHub Actions | Pipeline de CI que roda os testes automaticamente a cada push ou PR na main |
 
 ---
 
-
-### Quando o Dockerfile vai entrar?
-
-O Dockerfile será adicionado no **Nível 4** do roadmap, quando a aplicação
-for empacotada em container para rodar via GitHub Actions e ser publicada
-como imagem Docker. Nesse momento, o Docker Compose também passará a
-incluir a aplicação, permitindo subir tudo com um único `docker compose up`.
-
----
 
 ## ⚙️ Como rodar
 
 ### Pré-requisitos
 
 - Java 21
-- Maven
 - Docker e Docker Compose instalados
-
-### 1. Clone o repositório
-```bash
-git clone https://github.com/seu-usuario/product-catalog-api.git
-cd product-catalog-api
-```
 
 ### 2. Suba os serviços de infraestrutura
 ```bash
@@ -57,7 +44,6 @@ docker compose up -d
 ```bash
 docker ps
 ```
-
 Você deve ver os containers `postgres`, `redis`, `pgadmin` e `redis-commander` com status `Up`.
 
 ### 4. Rode a aplicação
@@ -70,7 +56,6 @@ Abra o projeto na IDE e execute a classe principal, ou via terminal:
 A API estará disponível em `http://localhost:8080`.
 
 ---
-
 ## 🔗 Serviços disponíveis
 
 | Serviço | URL | Credenciais |
@@ -80,7 +65,6 @@ A API estará disponível em `http://localhost:8080`.
 | Redis Commander | http://localhost:8081 | — |
 
 ### Conectar PgAdmin ao banco
-
 Após abrir o PgAdmin, clique em **Add New Server**:
 
 - **Host:** `postgres` (nome do container, não localhost)
@@ -88,11 +72,9 @@ Após abrir o PgAdmin, clique em **Add New Server**:
 - **Database:** `catalogdb`
 - **Username:** `admin`
 - **Password:** `admin123`
-
 ---
 
 ## 📦 Endpoints
-
 | Método | Endpoint | Descrição |
 |---|---|---|
 | GET | /products | Lista todos os produtos |
@@ -110,7 +92,6 @@ Após abrir o PgAdmin, clique em **Add New Server**:
   "quantity": 50
 }
 ```
-
 ---
 
 ## 🔄 Fluxo principal de cache
@@ -143,30 +124,34 @@ PUT /products/1 — atualização
 │
 └── próxima leitura vai buscar o dado atualizado no PostgreSQL
 ```
+### Testes de integração com Testcontainers
 
-### Por que esse fluxo?
+Testa o Redis de verdade — sem mock, sem emulador, sem Redis instalado na máquina.
+O Testcontainers sobe um container real de `redis:7` antes dos testes
+e derruba automaticamente ao final.
 
-O padrão utilizado é o **Cache-Aside** (também chamado de Lazy Loading).
-A aplicação é responsável por consultar o cache antes do banco e por
-popular o cache após um miss. Isso foi escolhido porque:
+- `@Testcontainers` gerencia o ciclo de vida do container no JUnit
+- `GenericContainer("redis:7")` sobe a imagem oficial do Redis
+- `@DynamicPropertySource` injeta o host e a porta do container no Spring antes de subir o contexto
+- Cobre os cenários: salvar e recuperar valor, incremento (INCR), decremento (DECR), expiração por TTL e ranking com Sorted Set
 
-- Produtos são lidos com muito mais frequência do que atualizados
-- Toleramos que o dado fique desatualizado por até 10 minutos (TTL)
-- Em caso de falha do Redis, a aplicação continua funcionando normalmente via banco
+**Por que Testcontainers em vez de mock?**
+Mockar o Redis esconde comportamentos reais — serialização, expiração de TTL,
+operações atômicas e estruturas como Sorted Set só se provam com um Redis real.
+Testcontainers garante que o teste valida o comportamento real sem depender
+de infraestrutura externa instalada na máquina.
 
----
+### Pipeline de CI com GitHub Actions
 
+A cada push ou pull request na branch `main`, o GitHub Actions executa
+automaticamente todos os testes do projeto em uma máquina virtual Ubuntu.
 
-
-## 🗺️ Roadmap
-
-- [x] Nível 1 — CRUD + Cache básico + Docker Compose
-- [ ] Nível 2 — Rate limiting + Ranking + Testes com Testcontainers
-- [ ] Nível 3 — Design Patterns + Circuit Breaker + Resilience4j
-- [ ] Nível 4 — CI/CD + Dockerfile + Métricas com Grafana
-- [ ] Nível 5 — Kubernetes + Redis Cluster + Cache L1/L2
-
----
+- Trigger em `push` e `pull_request` na `main`
+- Provisiona Java 21 com `actions/setup-java@v4`
+- Executa `./gradlew test`
+- Publica o relatório HTML de testes como artefato para download
+- Check verde no commit indica que todos os testes passaram
+- Check vermelho bloqueia o merge e aponta qual teste falhou
 
 ## 👨‍💻 Autor
 
