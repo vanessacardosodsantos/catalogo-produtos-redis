@@ -1,4 +1,4 @@
-name: CI — Testes unitários
+name: CI — Testes integrados
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
         run: chmod +x gradlew
 
 
-      - name: Rodar os testes
+      - name: Rodando os testes integrados
         run: ./gradlew test
 
 
