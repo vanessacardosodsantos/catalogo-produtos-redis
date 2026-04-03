@@ -7,23 +7,23 @@ Projeto desenvolvido para demonstrar o uso de cache distribuído na prática.
 
 ## 🚀 Tecnologias
 
-| Tecnologia | Por que foi usada |
+| Tecnologia | Papel no projeto |
 |---|---|
-| Java 21 | LTS mais recente, suporte a records e melhorias de performance |
-| Spring Boot | Framework principal, produtividade e ecossistema maduro |
-| Spring Data JPA | Abstração do banco relacional, sem SQL manual |
-| Spring Data Redis | Integração com Redis, suporte a @Cacheable e RedisTemplate |
-| Spring Cache | Anotações declarativas de cache (@Cacheable, @CacheEvict, @CachePut) |
-| PostgreSQL | Banco de dados relacional, fonte de verdade dos dados |
-| Redis | Cache distribuído em memória, ranking com Sorted Set |
-| Lombok | Elimina boilerplate de getters, setters e construtores |
-| Bean Validation | Validação de entrada com @NotBlank, @NotNull, @Positive |
-| Docker Compose | Orquestra localmente PostgreSQL, Redis, PgAdmin e Redis Commander |
-| PgAdmin 4 | Interface visual para administrar e inspecionar o PostgreSQL |
-| Redis Commander | Interface visual para inspecionar chaves e valores no Redis em tempo real |
-| Testcontainers | Sobe containers reais de Redis durante os testes de integração — sem mock |
-| JUnit 5 + Mockito | Testes unitários do controller com MockMvc e @MockitoBean |
-| GitHub Actions | Pipeline de CI que roda os testes automaticamente a cada push ou PR na main |
+| ![Java](https://img.shields.io/badge/Java-21-blue) | LTS atual, uso de recursos modernos (records, performance otimizada) |
+| ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen) | Framework base para construção da API REST |
+| ![JPA](https://img.shields.io/badge/Spring_Data_JPA-ORM-blue) | Persistência com abstração ORM sobre banco relacional |
+| ![Redis](https://img.shields.io/badge/Spring_Data_Redis-integration-red) | Integração com Redis para cache e operações avançadas |
+| ![Cache](https://img.shields.io/badge/Spring_Cache-abstraction-orange) | Estratégia de cache declarativa (@Cacheable, @CacheEvict) |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-blue) | Banco relacional como fonte de verdade |
+| ![Redis](https://img.shields.io/badge/Redis-cache-red) | Cache em memória para otimização de leitura e ranking |
+| ![Lombok](https://img.shields.io/badge/Lombok-boilerplate--reduction-pink) | Redução de código repetitivo |
+| ![Validation](https://img.shields.io/badge/Bean_Validation-JSR380-yellow) | Validação de dados de entrada |
+| ![Docker](https://img.shields.io/badge/Docker_Compose-orchestration-blue) | Orquestração local dos serviços |
+| ![PgAdmin](https://img.shields.io/badge/PgAdmin-UI-blue) | Administração visual do PostgreSQL |
+| ![Redis Commander](https://img.shields.io/badge/Redis_Commander-UI-red) | Inspeção de dados em cache |
+| ![Testcontainers](https://img.shields.io/badge/Testcontainers-integration--tests-purple) | Testes com containers reais |
+| ![Tests](https://img.shields.io/badge/JUnit5%20%2B%20Mockito-unit--tests-success) | Testes unitários e isolamento de camadas |
+| ![CI](https://img.shields.io/badge/GitHub_Actions-CI/CD-black) | Pipeline automatizado de build e testes |
 
 ---
 
