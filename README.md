@@ -126,7 +126,6 @@ PUT /products/1 — atualização
 ```
 ### Testes de integração com Testcontainers
 
-Testa o Redis de verdade — sem mock, sem emulador, sem Redis instalado na máquina.
 O Testcontainers sobe um container real de `redis:7` antes dos testes
 e derruba automaticamente ao final.
 
